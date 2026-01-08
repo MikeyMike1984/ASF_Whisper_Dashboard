@@ -1,0 +1,7 @@
+# Cline/Roo Code Compatibility Rules
+# These rules help maintain consistency with Cline-style workflows
+
+# Always read memory-bank files before starting work
+# Update activeContext.md after every significant step
+# Never edit .env files directly
+# Use TDD: Write tests before implementation

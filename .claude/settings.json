@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/c/Users/mreev/.local/bin/python3 .claude/hooks/pre_tool_use.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/c/Users/mreev/.local/bin/python3 .claude/hooks/post_tool_use.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/user_prompt_submit.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledMcpServers": ["memory", "github"],
+  "permissions": {
+    "allow": [
+      ".claude/**",
+      "memory-bank/**",
+      "src/**",
+      "tests/**",
+      "scripts/**"
+    ],
+    "deny": [
+      ".env",
+      ".bare/**",
+      "node_modules/**"
+    ]
+  }
+}
