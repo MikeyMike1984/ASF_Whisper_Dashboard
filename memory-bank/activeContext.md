@@ -1,23 +1,23 @@
 # Active Context (Global Roadmap)
 
 ## Session Restart Point
-**RESUME HERE**: Run `/epic-decompose dashboard-renderer` then set up parallel worktrees.
+**RESUME HERE**: Phase C complete. Run `/epic-decompose launcher` for Phase D or merge dashboard-renderer branch.
 
-## Parallel Development Setup (Next Session)
+## Parallel Development Setup
 ```
-TERMINAL 1 (This instance - Dashboard Renderer):
-1. /epic-decompose dashboard-renderer
-2. Create worktree: feature/dashboard-renderer
-3. Implement dashboard components
+TERMINAL 1 (Dashboard Renderer - COMPLETE):
+- Branch: feature/dashboard-renderer
+- Commit: 2c128ae
+- Status: Implementation complete, QA approved
 
-TERMINAL 2 (New instance - Launcher):
+TERMINAL 2 (Launcher - PENDING):
 1. /epic-decompose launcher
 2. Create worktree: feature/launcher
 3. Implement launcher components
 ```
 
 ## Current Phase
-**Phase C & D: PRDs Complete, Ready for Epic Decomposition**
+**Phase C: COMPLETE | Phase D: Ready for Epic Decomposition**
 
 ## Phase A Status: COMPLETE
 - [x] PRD Generated: `.claude/prds/swarm-pulse-sdk.md`
@@ -43,20 +43,23 @@ TERMINAL 2 (New instance - Launcher):
 - [x] Created CCPM compliance dashboard (`.claude/scripts/ccpm_dashboard.py`)
 - [x] Updated PROTOCOL_ENFORCEMENT.md with Section 7 (CCPM)
 
-## Phase C: Dashboard Renderer - PRD COMPLETE
+## Phase C: Dashboard Renderer - COMPLETE
 - [x] PRD Generated: `.claude/prds/dashboard-renderer.md`
 - [x] Architect Review: Approved with Conditions (all conditions addressed)
-- [ ] Epic Decomposition: PENDING
-- [ ] Implementation: NOT STARTED
+- [x] Epic Decomposition: `.claude/epics/dashboard-renderer/` (12 tasks)
+- [x] Implementation: COMPLETE (158 tests, >80% coverage)
+- [x] QA Engineer Review: APPROVED
 
-### Dashboard Renderer Features (from PRD)
+### Dashboard Renderer Features (Implemented)
 - DashboardRenderer class with start/stop lifecycle
 - Agent Grid widget (2x4 configurable matrix)
 - Task Queue widget with progress bars
-- Whisper Log widget for per-agent logs
+- Whisper Log widget for per-agent logs with auto-scroll
 - Header widget with metrics (agents, cost, tokens)
 - Polling engine (250ms-2000ms configurable)
-- Keyboard navigation (arrows, q to quit)
+- Keyboard navigation (arrows, +/-, r, q)
+- Dead agent detection (>30s threshold)
+- Color-coded status (cyan=Idle, green=Busy, yellow=Error, red=Dead)
 
 ## Phase D: Launcher - PRD COMPLETE
 - [x] PRD Generated: `.claude/prds/launcher.md`
@@ -77,6 +80,7 @@ TERMINAL 2 (New instance - Launcher):
 - [x] `feature/swarm-pulse-sdk`: b9c1d8f - Phase A implementation (94 tests)
 - [x] `feature/agent-integration`: ba7511d - Phase B implementation (98 tests)
 - [x] `master`: 88091c0 - Governance enhancements
+- [x] `feature/dashboard-renderer`: 2c128ae - Phase C implementation (158 tests)
 
 ## ADRs Created
 - ADR-001: Fractal Worktree Architecture
@@ -100,7 +104,7 @@ TERMINAL 2 (New instance - Launcher):
 ## Active Worktrees
 - `feature/swarm-pulse-sdk` - SwarmPulse SDK (COMPLETE)
 - `feature/agent-integration` - Agent Integration (COMPLETE)
-- `feature/dashboard-renderer` - Dashboard (PENDING - create after epic decompose)
+- `feature/dashboard-renderer` - Dashboard Renderer (COMPLETE)
 - `feature/launcher` - Launcher scripts (PENDING - create after epic decompose)
 
 ## Agents Consulted This Session
@@ -128,11 +132,12 @@ TERMINAL 2 (New instance - Launcher):
 - ConsoleCapture for --quiet mode
 - 98 tests passing
 
-### Phase C: Dashboard Renderer 📋 PRD COMPLETE
-- Build `DashboardRenderer` class with neo-blessed
-- Implement polling loop (configurable 250ms-2000ms)
-- Create visual layout: Agent Grid, Task Queue, Whisper Log, Header
-- 60fps render target with 15 active agents
+### Phase C: Dashboard Renderer ✅ COMPLETE
+- DashboardRenderer class with neo-blessed TUI
+- Polling engine (configurable 250ms-2000ms interval)
+- Visual layout: Agent Grid, Task Queue, Whisper Log, Header
+- Keyboard navigation with configurable grid
+- 158 tests passing, >80% coverage in all categories
 
 ### Phase D: Launcher 📋 PRD COMPLETE
 - Create launcher script that starts Dashboard + Swarm
