@@ -546,6 +546,98 @@ All three agents:
 
 ---
 
+## ASF WHISPER DASHBOARD
+
+The ASF Whisper Dashboard provides real-time TUI monitoring of your agent swarm with zero token overhead.
+
+### Running the Dashboard
+
+```bash
+# Build the project first
+npm run build
+
+# Option 1: Run the demo (creates test data and shows API usage)
+node demo.js
+
+# Option 2: Start the dashboard standalone
+node start-dashboard.js
+
+# Option 3: Use the Launcher CLI (full orchestration)
+node dist/bin/asf-swarm.js start
+```
+
+### Launcher CLI Commands
+
+```bash
+# Start dashboard + agent swarm
+node dist/bin/asf-swarm.js start [options]
+  --agents <n>       Number of agents to spawn (default: 4)
+  --config <path>    Path to config file (default: asf-swarm.config.json)
+  --no-dashboard     Run agents without dashboard
+  --verbose          Enable verbose logging
+
+# Stop all running processes
+node dist/bin/asf-swarm.js stop
+
+# Check swarm status
+node dist/bin/asf-swarm.js status
+
+# View launcher/agent logs
+node dist/bin/asf-swarm.js logs
+```
+
+### Dashboard Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate between agents horizontally |
+| `↑` `↓` | Navigate between agent rows |
+| `+` `-` | Increase/decrease poll interval |
+| `Enter` | Focus whisper log for selected agent |
+| `Esc` | Clear selection |
+| `r` | Force immediate refresh |
+| `q` | Quit dashboard |
+
+### Running Tests
+
+```bash
+# Run all 501 tests
+npm test
+
+# Run with coverage report
+npm run test:coverage
+
+# Watch mode for development
+npm run test:watch
+```
+
+### Configuration File
+
+Create `asf-swarm.config.json` in your project root:
+
+```json
+{
+  "version": "1.0",
+  "dashboard": {
+    "enabled": true,
+    "pollInterval": 500,
+    "dbPath": ".asf/swarm_state.db"
+  },
+  "agents": {
+    "count": 4,
+    "defaultRole": "developer",
+    "quietMode": true,
+    "autoRestart": false
+  },
+  "shutdown": {
+    "gracePeriod": 5000,
+    "forceAfter": 10000
+  }
+}
+```
+
+---
+
 ## RESOURCES
 
 ### Key Files to Reference

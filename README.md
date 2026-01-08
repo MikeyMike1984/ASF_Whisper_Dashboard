@@ -431,17 +431,29 @@ This repository includes a complete **TUI Dashboard** implementation for monitor
 # Install dependencies
 npm install
 
-# Run tests (403 tests)
+# Build the project
+npm run build
+
+# Run tests (501 tests, >80% coverage)
 npm test
 
-# Start the swarm (dashboard + agents)
-npx asf-swarm start
+# Run the demo (creates test data + shows usage)
+node demo.js
+
+# Start the dashboard only
+node start-dashboard.js
+
+# Start the swarm (dashboard + agents via CLI)
+node dist/bin/asf-swarm.js start
 
 # Check status
-npx asf-swarm status
+node dist/bin/asf-swarm.js status
 
 # Stop gracefully
-npx asf-swarm stop
+node dist/bin/asf-swarm.js stop
+
+# View logs
+node dist/bin/asf-swarm.js logs
 ```
 
 ### Architecture
@@ -483,8 +495,8 @@ npx asf-swarm stop
 | SwarmPulse SDK | 94 | >80% |
 | Agent Integration | 98 | >80% |
 | Dashboard Renderer | 158 | >80% |
-| Launcher CLI | 53 | ~80% |
-| **Total** | **403** | **>80%** |
+| Launcher CLI | 151 | ~80% |
+| **Total** | **501** | **>80%** |
 
 ### Configuration
 
