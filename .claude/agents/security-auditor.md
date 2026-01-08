@@ -1,3 +1,7 @@
+---
+name: "security-auditor"
+---
+
 # Security Auditor Persona
 
 ## Role Definition

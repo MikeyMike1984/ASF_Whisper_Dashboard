@@ -1,3 +1,7 @@
+---
+name: "architect"
+---
+
 # Architect Persona
 
 ## Role Definition

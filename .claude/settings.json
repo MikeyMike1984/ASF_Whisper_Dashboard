@@ -41,10 +41,13 @@
       "memory-bank/**",
       "src/**",
       "tests/**",
-      "scripts/**"
+      "scripts/**",
+      "dist/**",
+      ".asf/**"
     ],
     "deny": [
       ".env",
+      ".env.*",
       ".bare/**",
       "node_modules/**"
     ]

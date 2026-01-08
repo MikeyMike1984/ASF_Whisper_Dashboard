@@ -157,3 +157,64 @@ src/agents/
 - Architect: Approved (2026-01-07)
 
 ---
+
+## ADR-005: Process Orchestration Pattern for ASF Swarm
+
+### Date
+2026-01-07
+
+### Status
+Accepted
+
+### Context
+With SwarmPulse SDK, Agent Integration, and Dashboard Renderer complete, developers need
+a unified way to launch and manage the entire agent swarm. Manual orchestration of
+5-15 parallel processes is error-prone and lacks coordinated shutdown handling.
+
+### Decision
+Introduce **ASF Launcher** with Process Orchestration Pattern:
+- PID file coordination (`.asf/launcher.pid`) for cross-terminal control
+- Sequential startup: Dashboard first (with health check), then agents
+- Graceful shutdown via signal propagation (SIGINT/SIGTERM → all children)
+- Cross-platform process management via `tree-kill` library
+- Configuration file (`asf-swarm.config.json`) for declarative swarm definition
+
+### File Structure
+```
+src/launcher/
+├── index.ts                    # Public exports
+├── cli.ts                      # CLI entry point (commander.js)
+├── SwarmLauncher.ts            # Main orchestrator class
+├── config/                     # Configuration loading/validation
+├── process/                    # Process lifecycle management
+├── signals/                    # Signal handling (SIGINT/SIGTERM)
+└── pid/                        # Cross-terminal coordination
+```
+
+### Alternatives Considered
+1. **Shell scripts**: Rejected - not cross-platform, poor error handling
+2. **systemd/launchd**: Rejected - platform-specific, overkill for dev environment
+3. **PM2/forever**: Rejected - external dependency, different mental model
+4. **Docker Compose**: Rejected - heavyweight, requires Docker installed
+
+### Consequences
+**Positive**:
+- Single command to launch entire swarm (`asf-swarm start`)
+- Cross-terminal control via PID file (`asf-swarm stop` from any terminal)
+- Clean shutdown prevents orphan processes
+- Configurable via version-controlled JSON file
+- Cross-platform (Windows, macOS, Linux)
+
+**Negative**:
+- Additional process layer (launcher is parent of all children)
+- Requires Node.js for launcher itself
+- Config file adds learning curve
+
+### Platform-Specific Notes
+- **Windows**: SIGTERM simulated via `tree-kill`, Ctrl+C sends SIGINT equivalent
+- **macOS/Linux**: Native POSIX signal handling
+
+### Consulted Agents
+- Architect: Approved (2026-01-07)
+
+---

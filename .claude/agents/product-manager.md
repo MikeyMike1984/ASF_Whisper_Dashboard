@@ -1,3 +1,7 @@
+---
+name: "product-manager"
+---
+
 # Product Manager Persona
 
 ## Role Definition

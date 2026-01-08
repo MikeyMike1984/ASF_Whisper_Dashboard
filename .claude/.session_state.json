@@ -9,6 +9,8 @@
     "decisionLog": true
   },
   "actions_since_recitation": 0,
-  "significant_actions": 0,
-  "agents_consulted": []
+  "significant_actions": 5,
+  "agents_consulted": ["architect"],
+  "last_action": "PRDs generated, permissions updated, ready for epic decomposition",
+  "next_action": "Run /epic-decompose dashboard-renderer and /epic-decompose launcher"
 }

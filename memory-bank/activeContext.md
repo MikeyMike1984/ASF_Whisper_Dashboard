@@ -1,10 +1,23 @@
 # Active Context (Global Roadmap)
 
 ## Session Restart Point
-**RESUME HERE**: Generate PRDs for dashboard-renderer and launcher, then launch parallel instances.
+**RESUME HERE**: Run `/epic-decompose dashboard-renderer` then set up parallel worktrees.
+
+## Parallel Development Setup (Next Session)
+```
+TERMINAL 1 (This instance - Dashboard Renderer):
+1. /epic-decompose dashboard-renderer
+2. Create worktree: feature/dashboard-renderer
+3. Implement dashboard components
+
+TERMINAL 2 (New instance - Launcher):
+1. /epic-decompose launcher
+2. Create worktree: feature/launcher
+3. Implement launcher components
+```
 
 ## Current Phase
-**Phase C: Dashboard Renderer** (Next)
+**Phase C & D: PRDs Complete, Ready for Epic Decomposition**
 
 ## Phase A Status: COMPLETE
 - [x] PRD Generated: `.claude/prds/swarm-pulse-sdk.md`
@@ -30,64 +43,103 @@
 - [x] Created CCPM compliance dashboard (`.claude/scripts/ccpm_dashboard.py`)
 - [x] Updated PROTOCOL_ENFORCEMENT.md with Section 7 (CCPM)
 
+## Phase C: Dashboard Renderer - PRD COMPLETE
+- [x] PRD Generated: `.claude/prds/dashboard-renderer.md`
+- [x] Architect Review: Approved with Conditions (all conditions addressed)
+- [ ] Epic Decomposition: PENDING
+- [ ] Implementation: NOT STARTED
+
+### Dashboard Renderer Features (from PRD)
+- DashboardRenderer class with start/stop lifecycle
+- Agent Grid widget (2x4 configurable matrix)
+- Task Queue widget with progress bars
+- Whisper Log widget for per-agent logs
+- Header widget with metrics (agents, cost, tokens)
+- Polling engine (250ms-2000ms configurable)
+- Keyboard navigation (arrows, q to quit)
+
+## Phase D: Launcher - PRD COMPLETE
+- [x] PRD Generated: `.claude/prds/launcher.md`
+- [x] Architect Review: Approved with Conditions (all conditions addressed)
+- [x] ADR-005 Created: Process Orchestration Pattern
+- [ ] Epic Decomposition: PENDING
+- [ ] Implementation: NOT STARTED
+
+### Launcher Features (from PRD)
+- `asf-swarm start` command to launch dashboard + agents
+- `asf-swarm stop` for graceful termination
+- `asf-swarm status` for process information
+- Configuration file: `asf-swarm.config.json`
+- PID file management for cross-terminal control
+- Cross-platform signal handling (Windows via tree-kill)
+
 ## Git Commits Completed
 - [x] `feature/swarm-pulse-sdk`: b9c1d8f - Phase A implementation (94 tests)
 - [x] `feature/agent-integration`: ba7511d - Phase B implementation (98 tests)
 - [x] `master`: 88091c0 - Governance enhancements
 
-## Coding Agent Created
-- [x] `.claude/agents/coder.md` - Persona for parallel execution
+## ADRs Created
+- ADR-001: Fractal Worktree Architecture
+- ADR-002: Event-Driven Polling Architecture
+- ADR-003: TUI-Only Dashboard (v1)
+- ADR-004: Agent Wrapper Design
+- ADR-005: Process Orchestration Pattern (NEW)
 
-## Next Actions (On Restart)
-1. Generate PRD: `.claude/prds/dashboard-renderer.md`
-2. Generate PRD: `.claude/prds/launcher.md`
-3. Run `/epic-decompose dashboard-renderer`
-4. Run `/epic-decompose launcher`
-5. Launch parallel Claude Code instances in worktrees
+## Permissions Updated (This Session)
+- [x] `settings.local.json` updated with `bypassPermissions` mode
+- [x] All tools allowed: Bash(*), Edit(**), Write(**), Task(*), etc.
+- [x] Safety denials: rm -rf, force push, .env files
+- [x] Path casing fixed in settings.json
 
-## Phase C Goals
-1. Build `DashboardRenderer` class with neo-blessed
-2. Implement polling loop (configurable 250ms-2000ms)
-3. Create visual layout: Agent Grid, Task Queue, Whisper Log, Header
-4. 60fps render target with 15 active agents
+## Next Actions
+1. Run `/epic-decompose dashboard-renderer` (Terminal 1)
+2. Run `/epic-decompose launcher` (Terminal 2)
+3. Create worktrees: `feature/dashboard-renderer`, `feature/launcher`
+4. Launch parallel Claude Code instances in worktrees
 
 ## Active Worktrees
 - `feature/swarm-pulse-sdk` - SwarmPulse SDK (COMPLETE)
 - `feature/agent-integration` - Agent Integration (COMPLETE)
-- `feature/dashboard-renderer` - Dashboard (NEXT)
-- `feature/launcher` - Launcher scripts (PENDING)
+- `feature/dashboard-renderer` - Dashboard (PENDING - create after epic decompose)
+- `feature/launcher` - Launcher scripts (PENDING - create after epic decompose)
+
+## Agents Consulted This Session
+- [x] Architect: Reviewed both PRDs, approved with conditions
+- [ ] QA Engineer: Pending (pre-commit review)
+- [ ] Security Auditor: Pending (pre-merge review)
 
 ## Priority Queue
-1. **High**: DashboardRenderer class with neo-blessed
-2. **High**: Agent Grid widget (4x4 matrix)
-3. **High**: Polling loop implementation
-4. **Medium**: Task Queue and Whisper Log widgets
-5. **Low**: Header with cost/token tracking
+1. **High**: Epic decomposition for dashboard-renderer
+2. **High**: Epic decomposition for launcher
+3. **Medium**: Create worktrees for parallel development
+4. **Medium**: Begin implementation in parallel worktrees
 
 ---
 
 ## Implementation Phases Overview
 
-### Phase A: Database Schema & SwarmPulse Wrapper (Current)
-- Create `.asf/swarm_state.db` with schema
-- Build `SwarmPulse.ts` with `heartbeat()`, `capture()`, `progress()` methods
-- Unit tests for concurrency handling
+### Phase A: SwarmPulse SDK ✅ COMPLETE
+- SQLite database schema and migrations
+- SwarmPulse singleton with heartbeat, capture, progress methods
+- 94 tests, concurrency verified
 
-### Phase B: Agent Integration
-- Update ASF agent implementation to import SwarmPulse
-- Add `--quiet` mode support
-- Ensure backward compatibility with non-instrumented agents
+### Phase B: Agent Integration ✅ COMPLETE
+- AgentWrapper class with lifecycle management
+- ConsoleCapture for --quiet mode
+- 98 tests passing
 
-### Phase C: Dashboard Renderer
+### Phase C: Dashboard Renderer 📋 PRD COMPLETE
 - Build `DashboardRenderer` class with neo-blessed
 - Implement polling loop (configurable 250ms-2000ms)
 - Create visual layout: Agent Grid, Task Queue, Whisper Log, Header
+- 60fps render target with 15 active agents
 
-### Phase D: Integration & Launch
+### Phase D: Launcher 📋 PRD COMPLETE
 - Create launcher script that starts Dashboard + Swarm
-- Add graceful shutdown handling
-- Documentation and examples
+- PID file management for cross-terminal control
+- Graceful shutdown handling
+- Cross-platform signal support
 
 ---
 
-**Last Updated**: 2026-01-07 (CCPM Governance Enhancements)
+**Last Updated**: 2026-01-07 (PRDs complete, permissions updated, ready for epic decomposition)
