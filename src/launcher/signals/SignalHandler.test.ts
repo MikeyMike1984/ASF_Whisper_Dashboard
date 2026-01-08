@@ -6,20 +6,11 @@ import { SignalHandler } from './SignalHandler';
 
 describe('SignalHandler', () => {
   let handler: SignalHandler;
-  let shutdownCalled: boolean;
-  let shutdownPromise: Promise<void>;
-  let resolveShutdown: () => void;
 
   beforeEach(() => {
-    shutdownCalled = false;
-    shutdownPromise = new Promise((resolve) => {
-      resolveShutdown = resolve;
-    });
-
     handler = new SignalHandler({
       onShutdown: async () => {
-        shutdownCalled = true;
-        resolveShutdown();
+        // Shutdown callback for testing
       },
     });
   });

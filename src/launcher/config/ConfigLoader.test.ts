@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as os from 'os';
 import { ConfigLoader, ConfigurationError } from './ConfigLoader';
 import { DEFAULT_CONFIG } from './defaults';
-import { LauncherConfig } from './types';
 
 describe('ConfigLoader', () => {
   let tempDir: string;

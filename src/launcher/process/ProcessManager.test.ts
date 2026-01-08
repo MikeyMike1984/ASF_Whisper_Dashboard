@@ -35,7 +35,7 @@ describe('ProcessManager', () => {
     });
 
     it('should set process status to starting initially', async () => {
-      const process = await manager.spawn('node', ['-e', 'setTimeout(() => {}, 5000)'], {
+      await manager.spawn('node', ['-e', 'setTimeout(() => {}, 5000)'], {
         type: 'agent',
         id: 'test-agent',
       });
