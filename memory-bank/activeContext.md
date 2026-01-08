@@ -3,10 +3,17 @@
 ## Current Phase
 **Phase A: Database Schema & SwarmPulse Wrapper**
 
+## CCPM Status
+- [x] PRD Generated: `.claude/prds/swarm-pulse-sdk.md`
+- [x] Epic Decomposed: `.claude/epics/swarm-pulse-sdk/` (10 tasks)
+- [ ] Implementation Started
+
 ## Current Sprint Goals
 1. Create `.asf/swarm_state.db` with schema
-2. Build `SwarmPulse.ts` with `heartbeat()`, `capture()`, `progress()` methods
-3. Unit tests for concurrency handling
+2. Build `SwarmPulse.ts` with singleton pattern
+3. Implement: `registerAgent()`, `deregisterAgent()`, `heartbeat()`, `setStatus()`
+4. Implement: `progress()`, `capture()`, `reportTokens()`, `reportCost()`
+5. Unit tests for concurrency handling (80% coverage target)
 
 ## Active Worktrees
 - `main/` - Production codebase

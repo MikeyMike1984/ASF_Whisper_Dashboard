@@ -6,7 +6,15 @@
       "Bash(git worktree:*)",
       "Bash(git rev-parse:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(./scripts/setup-worktree.sh:*)",
+      "Bash(for wt in feature/swarm-pulse-sdk feature/agent-integration feature/dashboard-renderer feature/launcher)",
+      "Bash(do rm -rf \"$wt/memory-bank\")",
+      "Bash(echo:*)",
+      "Bash(done)"
     ]
   }
 }
