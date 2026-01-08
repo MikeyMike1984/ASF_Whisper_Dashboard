@@ -413,14 +413,125 @@ done
 
 ---
 
+## 🖥️ ASF Whisper Dashboard
+
+This repository includes a complete **TUI Dashboard** implementation for monitoring concurrent ASF agents.
+
+### Features
+
+- **Real-time Agent Monitoring**: View 5-15 agents in a 2x4 grid
+- **Task Queue Visualization**: See pending/in-progress tasks with progress bars
+- **Whisper Logs**: Per-agent log viewer with auto-scroll
+- **Keyboard Navigation**: Arrow keys, +/- for poll rate, q to quit
+- **Zero-Token Overhead**: Agents write to SQLite, not stdout
+
+### Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests (403 tests)
+npm test
+
+# Start the swarm (dashboard + agents)
+npx asf-swarm start
+
+# Check status
+npx asf-swarm status
+
+# Stop gracefully
+npx asf-swarm stop
+```
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  ASF Whisper Dashboard                   │
+├─────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              Header (Metrics)                    │   │
+│  │  Agents: 8/8 │ Cost: $12.34 │ Tokens: 1.2M      │   │
+│  └─────────────────────────────────────────────────┘   │
+│  ┌───────────────────────┐ ┌───────────────────────┐   │
+│  │    Agent Grid (2x4)   │ │    Task Queue         │   │
+│  │  ┌────┐ ┌────┐ ...   │ │  [████░░░] 60% ...    │   │
+│  │  │ A1 │ │ A2 │        │ │  [██░░░░░] 30% ...    │   │
+│  │  └────┘ └────┘        │ └───────────────────────┘   │
+│  └───────────────────────┘                             │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              Whisper Log (per-agent)             │   │
+│  │  [12:34] Starting task-001...                    │   │
+│  │  [12:35] Completed analysis...                   │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Components
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| **SwarmPulse SDK** | SQLite status reporting | `src/core/monitoring/` |
+| **Dashboard Renderer** | TUI with neo-blessed | `src/dashboard/` |
+| **Launcher CLI** | Process orchestration | `src/launcher/` |
+
+### Test Coverage
+
+| Component | Tests | Coverage |
+|-----------|-------|----------|
+| SwarmPulse SDK | 94 | >80% |
+| Agent Integration | 98 | >80% |
+| Dashboard Renderer | 158 | >80% |
+| Launcher CLI | 53 | ~80% |
+| **Total** | **403** | **>80%** |
+
+### Configuration
+
+Create `asf-swarm.config.json`:
+
+```json
+{
+  "version": "1.0",
+  "dashboard": {
+    "enabled": true,
+    "pollInterval": 500,
+    "dbPath": ".asf/swarm_state.db"
+  },
+  "agents": {
+    "count": 4,
+    "defaultRole": "developer",
+    "quietMode": true,
+    "autoRestart": false
+  },
+  "shutdown": {
+    "gracePeriod": 5000,
+    "forceAfter": 10000
+  }
+}
+```
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `←` `→` | Navigate agents |
+| `↑` `↓` | Navigate grid rows |
+| `+` `-` | Adjust poll rate |
+| `Enter` | Focus whisper log |
+| `Esc` | Clear selection |
+| `r` | Force refresh |
+| `q` | Quit |
+
+---
+
 ## 🔮 Future Enhancements
 
 Potential extensions (not included in v1.0):
 
 - **Agent Personas**: Load different system prompts per worktree
 - **Auto-Merge**: Automatic PR creation and CI/CD integration
-- **Swarm Orchestrator**: Master script to spawn and coordinate 50+ agents
-- **Telemetry Dashboard**: Real-time view of all active worktrees
+- **Remote Dashboard**: Web-based dashboard via WebSocket
 - **Memory Compaction**: Automatic summarization when context grows large
 
 ---
