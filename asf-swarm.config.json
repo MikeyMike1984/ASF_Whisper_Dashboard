@@ -1,0 +1,28 @@
+{
+  "$schema": "./asf-swarm.schema.json",
+  "version": "1.0",
+
+  "dashboard": {
+    "enabled": true,
+    "pollInterval": 500,
+    "dbPath": ".asf/swarm_state.db"
+  },
+
+  "agents": {
+    "count": 4,
+    "defaultRole": "developer",
+    "quietMode": true,
+    "autoRestart": false,
+    "restartDelay": 5000,
+    "maxRestarts": 3
+  },
+
+  "worktrees": [],
+
+  "tasks": [],
+
+  "shutdown": {
+    "gracePeriod": 10000,
+    "forceAfter": 15000
+  }
+}
