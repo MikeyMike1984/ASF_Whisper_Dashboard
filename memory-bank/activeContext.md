@@ -1,5 +1,8 @@
 # Active Context (Global Roadmap)
 
+## Session Restart Point
+**RESUME HERE**: Generate PRDs for dashboard-renderer and launcher, then launch parallel instances.
+
 ## Current Phase
 **Phase C: Dashboard Renderer** (Next)
 
@@ -26,6 +29,21 @@
 - [x] Commit-time CCPM governance warnings
 - [x] Created CCPM compliance dashboard (`.claude/scripts/ccpm_dashboard.py`)
 - [x] Updated PROTOCOL_ENFORCEMENT.md with Section 7 (CCPM)
+
+## Git Commits Completed
+- [x] `feature/swarm-pulse-sdk`: b9c1d8f - Phase A implementation (94 tests)
+- [x] `feature/agent-integration`: ba7511d - Phase B implementation (98 tests)
+- [x] `master`: 88091c0 - Governance enhancements
+
+## Coding Agent Created
+- [x] `.claude/agents/coder.md` - Persona for parallel execution
+
+## Next Actions (On Restart)
+1. Generate PRD: `.claude/prds/dashboard-renderer.md`
+2. Generate PRD: `.claude/prds/launcher.md`
+3. Run `/epic-decompose dashboard-renderer`
+4. Run `/epic-decompose launcher`
+5. Launch parallel Claude Code instances in worktrees
 
 ## Phase C Goals
 1. Build `DashboardRenderer` class with neo-blessed
