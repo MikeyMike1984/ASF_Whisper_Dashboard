@@ -1,17 +1,89 @@
 # CLAUDE.md - Global Operational Directives
 
+---
+
+## 🚨 CRITICAL: SESSION INITIALIZATION (BLOCKING)
+
+**BEFORE ANY OTHER ACTION**, you MUST complete session initialization:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  MANDATORY FIRST ACTIONS (Cannot proceed without completing)        │
+│                                                                     │
+│  1. READ: memory-bank/projectbrief.md                               │
+│  2. READ: memory-bank/systemPatterns.md                             │
+│  3. READ: memory-bank/activeContext.md                              │
+│  4. SUMMARIZE: Current phase, objectives, and blockers              │
+│  5. CONFIRM: "Session initialized. Memory Bank loaded."             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**If you skip this step, hooks will block code modifications.**
+
+See: `.claude/PROTOCOL_ENFORCEMENT.md` for full enforcement rules.
+
+---
+
 ## 🧠 Core Memory Protocol
 
 ### Context Loading
 At the start of EVERY session, you MUST read:
 1. `memory-bank/projectbrief.md` - Vision & Requirements
 2. `memory-bank/systemPatterns.md` - Architecture & Standards
+3. `memory-bank/activeContext.md` - Current task state
+4. `memory-bank/decisionLog.md` - Past architectural decisions
 
 ### Recitation Requirement
 You maintain a local `activeContext.md` in the current worktree. After every significant step (plan, code, test), you MUST update this file. This is your "Short Term Memory."
 
+**Significant Actions requiring recitation update:**
+- Completing a TodoWrite task
+- Creating/modifying >50 lines of code
+- Making architectural decisions
+- Running test suites
+- Any state-changing action
+
 ### Source of Truth
 The `memory-bank/` folder is the ultimate authority. If code contradicts the memory bank, the code is likely wrong—but verify with the user.
+
+---
+
+## 🤖 AGENT ORCHESTRATION PROTOCOL (NEW)
+
+### Mandatory Agent Consultations
+
+| Action | Required Agent | Enforcement |
+|--------|---------------|-------------|
+| Architecture decisions | **Architect** | Must consult before implementing |
+| Pre-commit | **QA Engineer** | Blocks commit without review |
+| Pre-merge/push | **Security Auditor** | Blocks merge without review |
+| Requirements changes | **Product Manager** | Must update PRD |
+
+### How to Invoke Persona Agents
+Use the Task tool with a prompt that explicitly activates the persona:
+
+```typescript
+// Example: Consulting Architect agent
+Task({
+  subagent_type: "general-purpose",
+  prompt: `
+    ACTIVATE PERSONA: Architect (from .claude/agents/architect.md)
+
+    TASK: Review the proposed database schema for SwarmPulse SDK.
+
+    CHECKLIST:
+    - [ ] Verify against systemPatterns.md
+    - [ ] Check for circular dependencies
+    - [ ] Document decision in ADR format
+
+    Return: Approval status and any required changes.
+  `
+})
+```
+
+### Agent Consultation Log
+All agent consultations are logged to `.claude/.agent_consultations.json`
+Pre-commit hooks verify required consultations occurred.
 
 ---
 
@@ -54,6 +126,13 @@ You have full read/write access to the current worktree. Use:
 ### Search
 Use `Grep` and `Glob` aggressively to locate code. Do NOT use `find` or `grep` bash commands.
 
+### Task Agents (Context Optimization)
+When spawning Task agents, provide MINIMAL context:
+- Specific task description only
+- Relevant file paths (not full content)
+- Clear success criteria
+- Do NOT pass full conversation history
+
 ### MCP (Model Context Protocol)
 Tools are provisioned based on your active sub-agent persona. If a tool is missing, ask the user to check `mcp.json`.
 
@@ -85,6 +164,12 @@ Use **Conventional Commits**:
 - `test:` Adding tests
 - `docs:` Documentation
 
+**Pre-commit checklist:**
+- [ ] Tests passing
+- [ ] QA Engineer agent consulted
+- [ ] activeContext.md updated
+- [ ] No pending ADRs for architectural decisions
+
 ---
 
 ## 🚨 Security & Safety
@@ -94,8 +179,10 @@ Never commit secrets. Use `.env.template` for placeholders.
 
 ### Hook Enforcement
 The following hooks enforce safety:
-- `pre_tool_use.py`: Blocks dangerous commands and file edits
-- `user_prompt_submit.sh`: Injects anti-sycophancy reminders
+- `pre_tool_use.py`: Blocks dangerous commands, enforces agent gates
+- `post_tool_use.py`: Tracks context usage, enforces recitation
+- `user_prompt_submit.sh`: Injects context and anti-sycophancy reminders
+- `session_tracker.py`: Monitors protocol compliance
 
 If a hook blocks you, **ask the user** rather than attempting to bypass.
 
@@ -119,9 +206,13 @@ Always follow this workflow for new features.
 
 After every significant action:
 
-1. Update `.claude/activeContext.md` in your worktree
+1. Update `memory-bank/activeContext.md` in your worktree
 2. Check off completed tasks
 3. Document blockers or open questions
+4. Record decisions requiring ADR
+
+**Enforcement**: After 3 significant actions without update, hooks will warn.
+After 5 actions, hooks will block further modifications.
 
 Example structure:
 ```markdown
@@ -136,18 +227,43 @@ Implement OAuth2 login flow
 - [ ] Implement OAuth handler
 - [ ] Integrate with frontend
 
+## Agents Consulted
+- [x] Architect: Approved OAuth2 flow design
+- [ ] QA Engineer: Pending pre-commit review
+- [ ] Security Auditor: Pending pre-merge review
+
+## Decisions Pending ADR
+- Token expiry duration: 24h vs 7d
+
 ## Blockers
-- Need clarification on token expiry duration
+- Need clarification on refresh token rotation policy
 ```
 
 ---
 
 ## 🔄 Context Management
 
-### When Context Gets Long (>20k tokens)
+### Context Budget
+```
+Approximate Allocation:
+├── System/CLAUDE.md: ~5K tokens (fixed)
+├── Memory Bank files: ~10K tokens (session start)
+├── Working context: ~100K tokens (dynamic)
+├── Agent invocations: ~5K per agent
+└── Safety buffer: ~20K tokens
+```
+
+### Compaction Triggers
+| Usage | Action |
+|-------|--------|
+| 50% | Consider summarizing long conversations |
+| 70% | Run `/memory-update` to sync state |
+| 85% | **BLOCKING**: Must compact before continuing |
+
+### When Context Gets Long (>70% capacity)
 1. Run `/memory-update` to sync state to Memory Bank
 2. Summarize current progress into `activeContext.md`
-3. Clear chat history
+3. Clear chat history (automatic compaction)
 4. Re-read `activeContext.md` and Memory Bank files
 
 This resets token count while preserving work state.
@@ -160,16 +276,58 @@ The `memory-bank/decisionLog.md` file records architectural decisions. Before ma
 
 1. Read `decisionLog.md` to understand past choices
 2. If your change contradicts a decision, ask the user
-3. If approved, update the decision log
+3. If approved, update the decision log with new ADR
+
+### ADR Format
+```markdown
+## ADR-XXX: [Decision Title]
+**Date**: YYYY-MM-DD
+**Status**: Proposed | Accepted | Deprecated
+**Context**: Why this decision was needed
+**Decision**: What we decided
+**Alternatives**: Other options considered
+**Consequences**: Impact of this decision
+**Consulted Agents**: [architect, security-auditor]
+```
 
 ---
 
 ## ⚖️ Balancing Autonomy and Oversight
 
 - **Act autonomously** for clear, low-risk tasks
-- **Ask the user** for architectural decisions or ambiguous requirements
+- **Consult agents** for architectural and security decisions
+- **Ask the user** for ambiguous requirements
 - **Challenge the user** if they suggest something that contradicts the Memory Bank
 
 ---
 
-**Remember**: You are not just a code generator. You are an autonomous engineer operating within a structured, safe, and highly parallel environment. Use it wisely.
+## 📋 PROTOCOL COMPLIANCE CHECKLIST
+
+### Session Start
+- [ ] Read projectbrief.md
+- [ ] Read systemPatterns.md
+- [ ] Read activeContext.md
+- [ ] Summarize current state to user
+- [ ] Confirm "Session initialized"
+
+### During Work
+- [ ] Update activeContext.md after significant actions
+- [ ] Consult required agents at checkpoints
+- [ ] Log architectural decisions for ADR
+- [ ] Monitor context usage
+
+### Pre-Commit
+- [ ] All tests passing
+- [ ] QA Engineer consulted
+- [ ] activeContext.md current
+- [ ] No pending ADRs
+
+### Pre-Merge
+- [ ] Architect approval
+- [ ] Security Auditor review
+- [ ] Memory Bank synced
+- [ ] decisionLog.md updated
+
+---
+
+**Remember**: You are not just a code generator. You are an autonomous engineer operating within a structured, safe, and highly parallel multi-agent environment. Follow the protocols. They exist to preserve context, ensure quality, and enable true autonomy.

@@ -105,3 +105,55 @@ Build Terminal User Interface (TUI) only for v1 using:
 - Deferred web UI to v2
 
 ---
+
+## ADR-004: Agent Wrapper Design for SwarmPulse Integration
+
+### Date
+2026-01-07
+
+### Status
+Accepted
+
+### Context
+Phase B requires integrating SwarmPulse SDK into ASF agents while maintaining:
+- Zero stdout pollution (--quiet mode)
+- Backward compatibility with non-instrumented agents
+- Clean lifecycle management
+
+### Decision
+Create an `AgentWrapper` class in `src/agents/` that:
+1. Wraps SwarmPulse singleton with higher-level API
+2. Implements console capture for --quiet mode
+3. Registers process exit handlers for graceful cleanup
+4. Uses environment variable detection for optional instrumentation
+
+### File Structure
+```
+src/agents/
+├── index.ts                 # Public exports
+├── AgentWrapper.ts          # Main wrapper class
+├── ConsoleCapture.ts        # --quiet mode implementation
+├── ProcessLifecycle.ts      # Exit handlers, cleanup
+├── types.ts                 # Agent-specific types
+└── __tests__/               # Unit and integration tests
+```
+
+### Alternatives Considered
+1. **Direct SwarmPulse usage**: Rejected - lacks lifecycle management
+2. **Decorator pattern**: Rejected - overly complex for simple wrapping
+3. **Mixin pattern**: Rejected - requires class-based agents
+
+### Consequences
+**Positive**:
+- Simple, imperative API for agents
+- Graceful degradation without SwarmPulse
+- Consistent cleanup on process exit
+
+**Negative**:
+- Additional abstraction layer
+- Requires agents to be updated (minimal changes)
+
+### Consulted Agents
+- Architect: Approved (2026-01-07)
+
+---

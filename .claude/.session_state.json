@@ -1,0 +1,14 @@
+{
+  "session_id": "session-1767836595",
+  "session_start": 1767836595.9355638,
+  "initialized": true,
+  "memory_bank_read": {
+    "projectbrief": true,
+    "systemPatterns": true,
+    "activeContext": true,
+    "decisionLog": true
+  },
+  "actions_since_recitation": 0,
+  "significant_actions": 0,
+  "agents_consulted": []
+}
