@@ -1,59 +1,58 @@
-# Project Brief: ASF_Whisper_Dashboard
+# Project Brief: ASF Whisper Dashboard
 
 ## Vision
-[Insert a concise, 2-3 sentence vision statement for the project.]
+Build a real-time Terminal User Interface (TUI) dashboard that visualizes 5-15 concurrent ASF agents with near-zero token overhead. By running agents in "Quiet Mode" and polling a local SQLite database, we achieve full observability without consuming API tokens for status updates.
 
-**Example**: "Build a real-time collaboration platform that enables distributed teams to co-edit documents with <100ms latency and end-to-end encryption."
+---
+
+## Problem Statement
+When running multiple parallel Claude agents in the Autonomous Software Forge, there's no visibility into what each agent is doing, their progress, or system health. Traditional stdout-based monitoring would consume tokens and pollute the context window. Developers need a "war room" view of their agent swarm without sacrificing efficiency.
 
 ---
 
 ## Core Requirements
 
 ### Functional Requirements
-1. **[Requirement 1]**: [Description]
-2. **[Requirement 2]**: [Description]
-3. **[Requirement 3]**: [Description]
+1. **Agent Status Grid**: 4x4 matrix of agent cards showing real-time status (Busy/Idle/Error/Dead)
+2. **Task Queue Viewer**: Scrolling list of pending, in-progress, and completed tasks with progress percentages
+3. **Whisper Log Feed**: Internal agent thoughts/logs captured silently to DB, viewable per-agent
+4. **Cost Estimator**: Real-time token usage and cost tracking in the header
+5. **Heartbeat Monitoring**: Auto-detect dead agents (no heartbeat > 30 seconds)
+6. **SwarmPulse SDK**: Lightweight wrapper for agents to report status without stdout
 
 ### Non-Functional Requirements
-- **Performance**: [e.g., API response time <200ms at p99]
-- **Security**: [e.g., OWASP Top 10 compliance]
-- **Scalability**: [e.g., Support 10k concurrent users]
-- **Availability**: [e.g., 99.9% uptime SLA]
+- **Performance**: Dashboard renders at 60fps with 15 active agents
+- **Latency**: Status updates visible within 500ms of agent state change
+- **Overhead**: Zero additional API tokens consumed for monitoring
+- **Reliability**: Dashboard stable for 8+ hour continuous operation
 
 ---
 
 ## Success Metrics
 
 ### Key Performance Indicators (KPIs)
-1. **[Metric 1]**: [Target value]
-2. **[Metric 2]**: [Target value]
-3. **[Metric 3]**: [Target value]
-
-### User Satisfaction
-- **NPS Score**: [Target]
-- **Task Completion Rate**: [Target]
+1. **Render Performance**: 60fps with 15 active agents
+2. **Token Overhead**: 0 additional tokens for monitoring
+3. **Update Latency**: <500ms from agent state change to visual update
+4. **Uptime**: 8+ hours continuous stable operation
 
 ---
 
 ## Constraints
 
-### Budget
-[Time/Money/Resource constraints]
-
 ### Technical Constraints
-- Must integrate with existing [System X]
-- Cannot use [Technology Y] due to licensing
-- Must support [Legacy Browser Z]
-
-### Regulatory
-- GDPR compliance required
-- HIPAA compliance required (if applicable)
+- Must integrate with existing ASF worktree architecture
+- SQLite only (no external database dependencies)
+- Terminal-only UI (must work over SSH)
+- Node.js 18+ required
 
 ---
 
-## Out of Scope (Anti-Goals)
-1. [Thing we explicitly will NOT build]
-2. [Feature that's deferred to v2]
+## Out of Scope (v1)
+1. Web-based dashboard (TUI only for v1)
+2. Historical analytics and reporting
+3. Remote agent monitoring (local machine only)
+4. Agent control/restart from dashboard (read-only for v1)
 
 ---
 

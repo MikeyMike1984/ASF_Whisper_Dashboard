@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(./init_forge.sh)",
-      "Bash(PROJECT_NAME=\"ASF_Agent_Dashboard\" ./init_forge.sh:*)"
+      "Bash(PROJECT_NAME=\"ASF_Agent_Dashboard\" ./init_forge.sh:*)",
+      "Bash(git worktree:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

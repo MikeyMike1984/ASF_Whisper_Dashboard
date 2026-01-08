@@ -3,7 +3,7 @@
 ## ADR-001: Initialize Autonomous Software Forge
 
 ### Date
-[TODAY]
+2026-01-07
 
 ### Status
 Accepted
@@ -31,5 +31,77 @@ Adopted the "Fractal Worktree" architecture with:
 
 ---
 
-## ADR-002: [Next Decision]
-[Repeat structure]
+## ADR-002: Event-Driven Polling Architecture for Dashboard
+
+### Date
+2026-01-07
+
+### Status
+Accepted
+
+### Context
+Need to monitor 5-15 concurrent ASF agents without consuming API tokens for status updates.
+Traditional approaches (stdout logging, WebSocket connections) would either pollute context
+or add complexity.
+
+### Decision
+Adopted Event-Driven Polling Architecture with:
+- SQLite database as single source of truth
+- Agents write to DB via SwarmPulse SDK (zero stdout)
+- Dashboard polls DB at configurable intervals (250ms-2000ms)
+- WAL mode for concurrent write support
+
+### Alternatives Considered
+1. **WebSocket connections**: Rejected - adds complexity, requires maintaining connections
+2. **File-based logging**: Rejected - parsing overhead, no query capability
+3. **Stdout monitoring**: Rejected - consumes tokens, pollutes agent context
+
+### Consequences
+**Positive**:
+- Zero token overhead for monitoring
+- Decoupled components (dashboard/agents communicate only via DB)
+- Resilient to restarts (either component can restart independently)
+- Concurrency safe with SQLite WAL mode
+
+**Negative**:
+- Polling has inherent latency (mitigated by 250ms minimum interval)
+- SQLite may become bottleneck at extreme scale (acceptable for 15 agents)
+
+---
+
+## ADR-003: TUI-Only Dashboard (v1)
+
+### Date
+2026-01-07
+
+### Status
+Accepted
+
+### Context
+Need a visualization layer for the agent monitoring system. Options include web UI,
+desktop app, or terminal UI.
+
+### Decision
+Build Terminal User Interface (TUI) only for v1 using:
+- `neo-blessed` for terminal rendering
+- `blessed-contrib` for widgets
+- "WarGames" inspired visual aesthetic
+
+### Alternatives Considered
+1. **Web UI (React)**: Rejected for v1 - additional infrastructure, browser dependency
+2. **Desktop App (Electron)**: Rejected - heavyweight, overkill for the use case
+3. **Native CLI output**: Rejected - lacks interactivity and visual appeal
+
+### Consequences
+**Positive**:
+- Works over SSH (critical for remote development)
+- No browser or additional dependencies
+- Lightweight, single process
+- Matches ASF terminal-centric workflow
+
+**Negative**:
+- Limited visual capabilities compared to web
+- Terminal compatibility variations
+- Deferred web UI to v2
+
+---

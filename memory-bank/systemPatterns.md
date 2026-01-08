@@ -3,37 +3,70 @@
 ## Architecture Style
 
 ### Pattern
-**[e.g., Hexagonal Architecture / Clean Architecture / Microservices]**
+**Event-Driven Polling Architecture**
 
 ### Justification
-[Why this pattern was chosen over alternatives]
+- **Decoupled**: Dashboard and agents communicate only through DB, no direct connections
+- **Zero Token Overhead**: Agents write to DB instead of stdout, preserving API tokens
+- **Concurrency Safe**: SQLite WAL mode handles 15+ concurrent writers
+- **Resilient**: Dashboard can restart without affecting agents, and vice versa
 
 ---
 
 ## Core Components
 
-### Frontend
-- **Framework**: [e.g., React 18 + TypeScript]
-- **State Management**: [e.g., Redux Toolkit]
-- **Routing**: [e.g., React Router v6]
-- **Styling**: [e.g., Tailwind CSS]
+### Frontend (TUI)
+- **Framework**: Node.js standalone process
+- **Rendering**: `neo-blessed` (terminal rendering)
+- **Widgets**: `blessed-contrib` (charts, grids, gauges)
+- **Polling**: 250ms-2000ms configurable refresh rate
 
-### Backend
-- **Runtime**: [e.g., Node.js 20 LTS]
-- **Framework**: [e.g., Express.js / Fastify]
-- **Language**: [e.g., TypeScript with strict mode]
-- **API Style**: [e.g., REST / GraphQL / tRPC]
+### Backend (State Layer)
+- **Runtime**: Node.js with TypeScript
+- **Database**: `better-sqlite3` (synchronous, robust concurrency)
+- **Concurrency**: WAL (Write-Ahead Logging) mode for 15+ simultaneous writers
+- **Location**: `.asf/swarm_state.db`
 
-### Data
-- **Primary Database**: [e.g., PostgreSQL 16]
-- **Caching**: [e.g., Redis 7]
-- **Search**: [e.g., Elasticsearch / Typesense]
-- **Message Queue**: [e.g., RabbitMQ / AWS SQS]
+### Agent Instrumentation
+- **Component**: `src/core/monitoring/SwarmPulse.ts`
+- **Integration**: Lightweight import, zero stdout tokens
+- **Mode**: Agents run with `--quiet` flag
 
 ### Infrastructure
-- **Hosting**: [e.g., AWS / GCP / Azure]
-- **CI/CD**: [e.g., GitHub Actions]
-- **Monitoring**: [e.g., Datadog / Prometheus + Grafana]
+- **Hosting**: Local machine (runs alongside ASF)
+- **CI/CD**: GitHub Actions for testing
+- **Distribution**: npm package or standalone binary
+
+---
+
+## Database Schema
+
+```sql
+-- Active agents and their current state
+agents (
+  id, pid, role, status [Idle|Busy|Error],
+  current_task_id, last_seen, worktree_path
+)
+
+-- Task queue and progress tracking
+tasks (
+  id, title, status [Pending|InProgress|Complete|Failed],
+  assigned_agent_id, progress_percent, dependencies,
+  created_at, started_at, completed_at
+)
+
+-- Circular buffer of system events
+logs (
+  id, agent_id, level [Info|Warn|Error],
+  message, timestamp
+) -- Limited to last 1000 entries
+
+-- Time-series metrics for cost tracking
+metrics (
+  id, agent_id, tokens_used, estimated_cost,
+  timestamp
+)
+```
 
 ---
 
@@ -44,131 +77,72 @@
 - **Functions**: `camelCase`
 - **Classes**: `PascalCase`
 - **Constants**: `UPPER_SNAKE_CASE`
-- **Files**: `kebab-case.ts`
+- **Files**: Feature-based structure
 
 ### File Structure
 ```
 src/
-├── domain/          # Business logic (framework-agnostic)
-├── application/     # Use cases
-├── infrastructure/  # External integrations (DB, APIs)
-└── presentation/    # Controllers, UI components
+├── core/           # Core business logic
+│   └── monitoring/ # SwarmPulse SDK
+├── dashboard/      # TUI rendering components
+└── agents/         # Agent integration utilities
 ```
 
-### Error Handling
-- **Backend**: All errors thrown as custom Error classes with codes
-- **Frontend**: ErrorBoundary catches React errors
-- **API**: Consistent error response format:
-  ```json
-  {
-    "error": {
-      "code": "AUTH_INVALID_TOKEN",
-      "message": "The provided token is invalid or expired",
-      "statusCode": 401
-    }
-  }
-  ```
-
 ### Testing Strategy
-- **Unit Tests**: Co-located with source files (`component.test.ts`)
-- **Integration Tests**: `tests/integration/`
-- **E2E Tests**: `tests/e2e/`
-- **Coverage Target**: 80% line coverage minimum
+- **Framework**: Jest
+- **Coverage Target**: 80% minimum
+- **Unit Tests**: Co-located with source files
+
+### Linting & Formatting
+- **Linting**: ESLint
+- **Formatting**: Prettier
+- **TypeScript**: Strict mode enabled
 
 ---
 
 ## Design Patterns
 
 ### Preferred Patterns
-1. **Dependency Injection**: Use constructor injection for testability
-2. **Repository Pattern**: Abstraction layer over data access
-3. **Factory Pattern**: For complex object creation
-4. **Observer Pattern**: For event-driven logic
+1. **Polling Pattern**: Dashboard polls DB at configurable intervals
+2. **Repository Pattern**: Abstraction layer over SQLite access
+3. **Observer Pattern**: For event-driven UI updates
 
 ### Anti-Patterns to Avoid
-- ❌ **God Objects**: No classes with >500 lines
-- ❌ **Circular Dependencies**: Enforce with linting
-- ❌ **Magic Numbers**: Use named constants
-- ❌ **Callback Hell**: Use async/await
+- ❌ **Stdout Pollution**: Never log to stdout (consumes tokens)
+- ❌ **Direct Connections**: Agents and dashboard must only communicate via DB
+- ❌ **Blocking I/O**: Use synchronous SQLite but keep operations fast
 
 ---
 
-## API Design Principles
+## Visual Layout (Wargames Grid)
 
-### RESTful Conventions
-- **GET** `/api/users` - List users
-- **GET** `/api/users/:id` - Get single user
-- **POST** `/api/users` - Create user
-- **PUT** `/api/users/:id` - Full update
-- **PATCH** `/api/users/:id` - Partial update
-- **DELETE** `/api/users/:id` - Delete user
-
-### Versioning
-Use URL versioning: `/api/v1/users`
-
-### Authentication
-- **Method**: JWT with refresh tokens
-- **Header**: `Authorization: Bearer <token>`
-- **Token Expiry**: Access=15min, Refresh=7days
-
----
-
-## Security Standards
-
-### Input Validation
-- All user input validated with Zod schemas
-- SQL injection prevention via parameterized queries
-- XSS prevention via escaping in templates
-
-### Secrets Management
-- Use environment variables (never hardcode)
-- `.env` files excluded from git
-- Production secrets in vault (AWS Secrets Manager / Vault)
-
-### Dependencies
-- Run `npm audit` weekly
-- Auto-update patch versions via Dependabot
-
----
-
-## Performance Guidelines
-
-### Frontend
-- Code splitting for routes
-- Lazy load images with `loading="lazy"`
-- Debounce user input (300ms for search)
-
-### Backend
-- Database indexes on all foreign keys
-- Connection pooling (min=10, max=50)
-- Caching strategy: Cache-Aside pattern
-
-### Monitoring
-- Alert if p99 latency >500ms
-- Alert if error rate >1%
-
----
-
-## Deployment Process
-
-### Branching Strategy
-- **main**: Production
-- **develop**: Staging
-- **feature/***: Feature branches (use worktrees!)
-
-### CI/CD Pipeline
-1. Run linters (ESLint, Prettier)
-2. Run tests (unit + integration)
-3. Build artifacts
-4. Deploy to staging
-5. Run E2E tests
-6. Manual approval for production
-7. Deploy to production
-8. Run smoke tests
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ASF Whisper Dashboard    Agents: 8/15    Cost: $2.34    Tokens: 125.4k │
+├───────────────────────────────────┬─────────────────────────────────────┤
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ │  WHISPER LOG [Agent-03]             │
+│  │ A01 │ │ A02 │ │ A03 │ │ A04 │ │  ─────────────────────────────────  │
+│  │BUSY │ │IDLE │ │BUSY │ │ ERR │ │  [14:23:01] Reading systemPatterns  │
+│  │ 45% │ │  -  │ │ 78% │ │  !  │ │  [14:23:03] Planning auth module    │
+│  └─────┘ └─────┘ └─────┘ └─────┘ │  [14:23:15] Writing failing test    │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ │  [14:23:22] Implementing handler    │
+│  │ A05 │ │ A06 │ │ A07 │ │ A08 │ │  [14:23:45] Running npm test        │
+│  │BUSY │ │BUSY │ │IDLE │ │DEAD │ │  [14:23:58] Tests passing           │
+│  │ 12% │ │ 91% │ │  -  │ │  X  │ │                                     │
+│  └─────┘ └─────┘ └─────┘ └─────┘ │                                     │
+├───────────────────────────────────┤                                     │
+│  TASK QUEUE                       │                                     │
+│  ─────────────────────────────────│                                     │
+│  [##########] 100% auth-login     │                                     │
+│  [#######   ]  78% auth-register  │                                     │
+│  [####      ]  45% user-model     │                                     │
+│  [          ]   0% api-docs       │                                     │
+└───────────────────────────────────┴─────────────────────────────────────┘
+```
 
 ---
 
 ## Revision History
-- **[DATE]**: Initial architecture definition
+- **2026-01-07**: Initial architecture definition
 
-**Last Updated**: [DATE]
+**Last Updated**: 2026-01-07
