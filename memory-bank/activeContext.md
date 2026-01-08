@@ -102,10 +102,12 @@ TERMINAL 2 (Launcher - PENDING):
 3. Implement launcher components
 
 ## Active Worktrees
-- `feature/swarm-pulse-sdk` - SwarmPulse SDK (COMPLETE - merged, can prune)
-- `feature/agent-integration` - Agent Integration (COMPLETE - merged, can prune)
-- `feature/dashboard-renderer` - Dashboard Renderer (COMPLETE - merged, can prune)
 - `feature/launcher` - Launcher scripts (PENDING - active)
+
+### Pruned Worktrees (Merged to Master)
+- `feature/swarm-pulse-sdk` - Phase A (pruned 2026-01-07)
+- `feature/agent-integration` - Phase B (pruned 2026-01-07)
+- `feature/dashboard-renderer` - Phase C (pruned 2026-01-07)
 
 ## Agents Consulted This Session
 - [x] Architect: Reviewed both PRDs, approved with conditions
@@ -146,4 +148,4 @@ TERMINAL 2 (Launcher - PENDING):
 
 ---
 
-**Last Updated**: 2026-01-07 (Phase C merged to master, memory/session state synced)
+**Last Updated**: 2026-01-07 (Worktrees pruned, ready for Phase D)
