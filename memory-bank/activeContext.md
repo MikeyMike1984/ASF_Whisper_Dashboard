@@ -1,7 +1,7 @@
 # Active Context (Global Roadmap)
 
 ## Session Restart Point
-**RESUME HERE**: Phase C complete. Run `/epic-decompose launcher` for Phase D or merge dashboard-renderer branch.
+**RESUME HERE**: Phase C complete. Run `/epic-decompose launcher` for Phase D.
 
 ## Parallel Development Setup
 ```
@@ -87,7 +87,7 @@ TERMINAL 2 (Launcher - PENDING):
 - ADR-002: Event-Driven Polling Architecture
 - ADR-003: TUI-Only Dashboard (v1)
 - ADR-004: Agent Wrapper Design
-- ADR-005: Process Orchestration Pattern (NEW)
+- ADR-005: Process Orchestration Pattern
 
 ## Permissions Updated (This Session)
 - [x] `settings.local.json` updated with `bypassPermissions` mode
@@ -96,10 +96,9 @@ TERMINAL 2 (Launcher - PENDING):
 - [x] Path casing fixed in settings.json
 
 ## Next Actions
-1. Merge dashboard-renderer branch to master (or continue to Phase D)
-2. Run `/epic-decompose launcher` for Phase D
-3. Create worktree: `feature/launcher`
-4. Implement launcher components
+1. Run `/epic-decompose launcher` for Phase D
+2. Create worktree: `feature/launcher`
+3. Implement launcher components
 
 ## Active Worktrees
 - `feature/swarm-pulse-sdk` - SwarmPulse SDK (COMPLETE)
@@ -113,10 +112,9 @@ TERMINAL 2 (Launcher - PENDING):
 - [ ] Security Auditor: Pending (pre-merge review)
 
 ## Priority Queue
-1. **High**: Merge dashboard-renderer branch to master (or continue to Phase D)
-2. **High**: Epic decomposition for launcher
-3. **Medium**: Create worktree for launcher implementation
-4. **Low**: Security Auditor review before final merge
+1. **High**: Epic decomposition for launcher
+2. **Medium**: Create worktree for launcher implementation
+3. **Low**: Security Auditor review before final merge
 
 ---
 
@@ -147,4 +145,4 @@ TERMINAL 2 (Launcher - PENDING):
 
 ---
 
-**Last Updated**: 2026-01-07 (Phase C Dashboard Renderer COMPLETE - 158 tests, QA approved, commit 2c128ae)
+**Last Updated**: 2026-01-07 (Phase C Dashboard Renderer merged to master)

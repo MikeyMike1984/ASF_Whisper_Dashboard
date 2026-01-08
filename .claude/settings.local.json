@@ -15,7 +15,10 @@
       "NotebookEdit(**)",
       "TodoWrite(*)",
       "AskUserQuestion(*)",
-      "Bash(claude doctor:*)"
+      "Bash(claude doctor:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ],
     "deny": [
       "Bash(rm -rf /)",
