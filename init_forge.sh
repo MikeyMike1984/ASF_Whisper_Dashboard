@@ -17,7 +17,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   THE AUTONOMOUS SOFTWARE FORGE - BOOTSTRAP v2.0      ║${NC}"
+echo -e "${BLUE}║   THE AUTONOMOUS SOFTWARE FORGE - BOOTSTRAP v3.0      ║${NC}"
 echo -e "${BLUE}║            Production Ready Edition                    ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════╝${NC}"
 echo ""
@@ -405,10 +405,13 @@ cat > .claude/settings.json <<SETTINGS_EOF
       "memory-bank/**",
       "src/**",
       "tests/**",
-      "scripts/**"
+      "scripts/**",
+      "dist/**",
+      ".asf/**"
     ],
     "deny": [
       ".env",
+      ".env.*",
       ".bare/**",
       "node_modules/**"
     ]
@@ -2926,6 +2929,510 @@ NOTIFICATION_EOF
 chmod +x .claude/hooks/notification.py
 echo "  ✅ Created: .claude/hooks/notification.py"
 
+# ----- .claude/hooks/session_tracker.py -----
+cat > .claude/hooks/session_tracker.py <<'SESSION_TRACKER_EOF'
+#!/usr/bin/env python3
+"""
+SESSION TRACKER: Protocol Compliance Monitoring
+Purpose: Track session state and enforce ASF protocol compliance
+
+Tracks:
+1. Session initialization (memory bank reading)
+2. Recitation loop compliance (activeContext updates)
+3. Agent consultation log
+4. Context usage estimation
+5. Decision logging requirements
+"""
+
+import json
+import os
+import time
+from pathlib import Path
+from typing import Optional, Dict, List, Any
+
+# State files
+SESSION_STATE_FILE = ".claude/.session_state.json"
+AGENT_LOG_FILE = ".claude/.agent_consultations.json"
+RECITATION_LOG_FILE = ".claude/.recitation_log.json"
+
+class SessionTracker:
+    """Singleton tracker for session state and protocol compliance"""
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        self.state = self._load_state()
+
+    def _load_state(self) -> Dict[str, Any]:
+        """Load session state from file"""
+        default_state = {
+            'session_id': f"session-{int(time.time())}",
+            'session_start': time.time(),
+            'initialized': False,
+            'memory_bank_read': {
+                'projectbrief': False,
+                'systemPatterns': False,
+                'activeContext': False,
+                'decisionLog': False
+            },
+            'significant_actions': 0,
+            'last_recitation': None,
+            'actions_since_recitation': 0,
+            'agents_consulted': [],
+            'decisions_pending_adr': [],
+            'estimated_context_tokens': 0,
+            'compaction_count': 0
+        }
+
+        try:
+            if os.path.exists(SESSION_STATE_FILE):
+                with open(SESSION_STATE_FILE, 'r') as f:
+                    saved_state = json.load(f)
+                    # Check if session is stale (>4 hours old)
+                    if time.time() - saved_state.get('session_start', 0) > 14400:
+                        return default_state
+                    return saved_state
+        except (json.JSONDecodeError, IOError):
+            pass
+        return default_state
+
+    def _save_state(self):
+        """Save session state to file"""
+        try:
+            os.makedirs(os.path.dirname(SESSION_STATE_FILE), exist_ok=True)
+            with open(SESSION_STATE_FILE, 'w') as f:
+                json.dump(self.state, f, indent=2)
+        except IOError:
+            pass
+
+    def is_session_initialized(self) -> bool:
+        """Check if session has been properly initialized"""
+        return self.state.get('initialized', False)
+
+    def mark_memory_bank_read(self, file_name: str):
+        """Mark a memory bank file as read"""
+        key_map = {
+            'projectbrief.md': 'projectbrief',
+            'systemPatterns.md': 'systemPatterns',
+            'activeContext.md': 'activeContext',
+            'decisionLog.md': 'decisionLog'
+        }
+
+        for file_key, state_key in key_map.items():
+            if file_key in file_name:
+                self.state['memory_bank_read'][state_key] = True
+                break
+
+        # Check if fully initialized
+        mb = self.state['memory_bank_read']
+        if mb['projectbrief'] and mb['systemPatterns'] and mb['activeContext']:
+            self.state['initialized'] = True
+
+        self._save_state()
+
+    def record_significant_action(self, action_type: str, description: str):
+        """Record a significant action that requires recitation"""
+        self.state['significant_actions'] += 1
+        self.state['actions_since_recitation'] += 1
+        self._save_state()
+
+    def record_recitation(self):
+        """Record that activeContext.md was updated"""
+        self.state['last_recitation'] = time.time()
+        self.state['actions_since_recitation'] = 0
+        self._save_state()
+
+    def check_recitation_needed(self) -> Optional[Dict[str, Any]]:
+        """Check if recitation (activeContext update) is needed"""
+        actions = self.state['actions_since_recitation']
+
+        if actions >= 5:
+            return {
+                'level': 'critical',
+                'message': f"RECITATION REQUIRED: {actions} significant actions without updating activeContext.md",
+                'actions_since_update': actions
+            }
+        elif actions >= 3:
+            return {
+                'level': 'warning',
+                'message': f"Recitation recommended: {actions} actions since last activeContext.md update",
+                'actions_since_update': actions
+            }
+        return None
+
+    def record_agent_consultation(self, agent_name: str, purpose: str):
+        """Record that an agent persona was consulted"""
+        consultation = {
+            'agent': agent_name,
+            'purpose': purpose,
+            'timestamp': time.time()
+        }
+        self.state['agents_consulted'].append(consultation)
+
+        try:
+            os.makedirs(os.path.dirname(AGENT_LOG_FILE), exist_ok=True)
+            log = []
+            if os.path.exists(AGENT_LOG_FILE):
+                with open(AGENT_LOG_FILE, 'r') as f:
+                    log = json.load(f)
+            log.append(consultation)
+            with open(AGENT_LOG_FILE, 'w') as f:
+                json.dump(log, f, indent=2)
+        except (json.JSONDecodeError, IOError):
+            pass
+
+        self._save_state()
+
+    def check_agent_gates(self, action: str) -> Optional[Dict[str, Any]]:
+        """Check if required agents have been consulted for an action"""
+        consulted = [c['agent'] for c in self.state['agents_consulted']]
+
+        if action == 'commit':
+            if 'qa-engineer' not in consulted:
+                return {
+                    'blocked': True,
+                    'message': "QA Engineer review required before commit",
+                    'required_agent': 'qa-engineer'
+                }
+
+        elif action == 'merge' or action == 'push':
+            missing = []
+            if 'architect' not in consulted:
+                missing.append('architect')
+            if 'security-auditor' not in consulted:
+                missing.append('security-auditor')
+
+            if missing:
+                return {
+                    'blocked': True,
+                    'message': f"Required agent reviews missing: {', '.join(missing)}",
+                    'required_agents': missing
+                }
+
+        return None
+
+    def reset_session(self):
+        """Reset session state for new session"""
+        self.state = {
+            'session_id': f"session-{int(time.time())}",
+            'session_start': time.time(),
+            'initialized': False,
+            'memory_bank_read': {
+                'projectbrief': False,
+                'systemPatterns': False,
+                'activeContext': False,
+                'decisionLog': False
+            },
+            'significant_actions': 0,
+            'last_recitation': None,
+            'actions_since_recitation': 0,
+            'agents_consulted': [],
+            'decisions_pending_adr': [],
+            'estimated_context_tokens': 0,
+            'compaction_count': self.state.get('compaction_count', 0)
+        }
+        self._save_state()
+
+
+# Singleton instance
+tracker = SessionTracker()
+
+
+def get_tracker() -> SessionTracker:
+    """Get the session tracker instance"""
+    return tracker
+SESSION_TRACKER_EOF
+
+chmod +x .claude/hooks/session_tracker.py
+echo "  ✅ Created: .claude/hooks/session_tracker.py"
+
+# ----- .claude/PROTOCOL_ENFORCEMENT.md -----
+cat > .claude/PROTOCOL_ENFORCEMENT.md <<'PROTOCOL_ENFORCEMENT_EOF'
+# ASF Protocol Enforcement Framework
+
+This document defines the enforcement rules for the Autonomous Software Forge protocols.
+
+---
+
+## 1. Session Initialization Protocol
+
+### Requirement
+All sessions MUST begin by reading Memory Bank files before any code modifications.
+
+### Enforcement
+- `pre_tool_use.py` checks `.session_state.json` for initialization status
+- Write/Edit tools are **BLOCKED** until Memory Bank files are read
+- Warning displayed after 1st blocked action
+- Hard block after 2nd attempted action without initialization
+
+### Required Files
+1. `memory-bank/projectbrief.md`
+2. `memory-bank/systemPatterns.md`
+3. `memory-bank/activeContext.md`
+
+### Compliance Check
+```python
+tracker.is_session_initialized()  # Returns True/False
+```
+
+---
+
+## 2. Recitation Loop Protocol
+
+### Requirement
+After every 3-5 significant actions, `activeContext.md` MUST be updated.
+
+### Significant Actions
+- Creating or modifying >50 lines of code
+- Running test suites
+- Making architectural decisions
+- Completing a TodoWrite task
+- Creating commits
+
+### Enforcement Levels
+| Actions Without Update | Level | Action |
+|------------------------|-------|--------|
+| 3 | Warning | Yellow reminder injected |
+| 5 | Critical | Red warning, work should pause |
+| 7 | Blocking | Write operations blocked |
+
+---
+
+## 3. Agent Orchestration Protocol
+
+### Mandatory Consultations
+
+| Action | Required Agent | Enforcement |
+|--------|---------------|-------------|
+| Architecture decisions | Architect | Must document in ADR |
+| Pre-commit | QA Engineer | Warning if skipped |
+| Pre-merge | Security Auditor | Warning if skipped |
+| Requirements changes | Product Manager | Must update PRD |
+
+### Consultation Logging
+All consultations are logged to `.claude/.agent_consultations.json`
+
+---
+
+## 4. CCPM Governance (5-Phase)
+
+### Phases
+1. **Brainstorm** - Generate PRD via `/prd-new`
+2. **Plan** - Decompose via `/epic-decompose`
+3. **Decompose** - Create worktrees for tasks
+4. **Execute** - Implement in isolated worktrees
+5. **Sync** - Merge via `/worktree-sync`
+
+### Enforcement
+- `pre_tool_use.py` checks `.ccpm_state.json` for current phase
+- Attempting to write implementation code without PRD triggers warning
+- Attempting implementation without epic decomposition triggers warning
+
+---
+
+## 5. TDD Enforcement
+
+### Requirement
+Tests MUST be written before implementation code (Red-Green-Refactor).
+
+### Enforcement
+- `pre_tool_use.py` tracks test execution via `.tdd_state.json`
+- Commit attempts without recent test run trigger warning
+- Commit attempts with failing tests are warned
+
+---
+
+## 6. Context Management
+
+### Thresholds
+| Usage | Action |
+|-------|--------|
+| 50% (~100K) | Consider summarizing |
+| 70% (~140K) | Run `/memory-update` |
+| 85% (~170K) | BLOCKING - must compact |
+
+### Enforcement
+- `post_tool_use.py` estimates token usage
+- Warnings injected at thresholds
+- Recommendations to run `/memory-update`
+
+---
+
+## 7. Enforcement Summary Table
+
+| Protocol | Enforcement Level | Hook |
+|----------|-------------------|------|
+| Session Init | BLOCKING | pre_tool_use.py |
+| Recitation Loop | WARNING → BLOCKING | pre_tool_use.py |
+| Agent Consultation | WARNING | pre_tool_use.py |
+| CCPM Phases | WARNING | pre_tool_use.py |
+| TDD | WARNING | pre_tool_use.py |
+| Context Limits | WARNING → BLOCKING | post_tool_use.py |
+| Dangerous Commands | BLOCKING | pre_tool_use.py |
+| File Restrictions | BLOCKING | pre_tool_use.py |
+
+---
+
+## 8. Compliance Checklist
+
+### Per Session
+- [ ] Memory Bank files read
+- [ ] Session initialized confirmed
+- [ ] Working in correct worktree/branch
+
+### Per Feature
+- [ ] PRD created before implementation
+- [ ] Epic decomposed before coding
+- [ ] Worktree created for feature
+
+### Per Commit
+- [ ] Tests passing
+- [ ] activeContext.md updated
+- [ ] QA Engineer consulted
+
+### Per Merge
+- [ ] Architect reviewed
+- [ ] Security Auditor reviewed
+- [ ] Memory Bank synced
+PROTOCOL_ENFORCEMENT_EOF
+
+echo "  ✅ Created: .claude/PROTOCOL_ENFORCEMENT.md"
+
+# ----- .claude/scripts/ccpm_dashboard.py -----
+mkdir -p .claude/scripts
+cat > .claude/scripts/ccpm_dashboard.py <<'CCPM_DASH_EOF'
+#!/usr/bin/env python3
+"""
+CCPM Compliance Dashboard
+Shows current CCPM governance status for all features.
+
+Usage:
+    python .claude/scripts/ccpm_dashboard.py
+"""
+
+import os
+import json
+from pathlib import Path
+from datetime import datetime
+
+# ANSI color codes
+GREEN = '\033[0;32m'
+YELLOW = '\033[1;33m'
+RED = '\033[0;31m'
+BLUE = '\033[0;34m'
+CYAN = '\033[0;36m'
+BOLD = '\033[1m'
+NC = '\033[0m'
+
+# State files and directories
+CCPM_STATE_FILE = ".claude/.ccpm_state.json"
+PRD_DIR = ".claude/prds"
+EPIC_DIR = ".claude/epics"
+AGENT_LOG_FILE = ".claude/.agent_consultations.json"
+SESSION_STATE_FILE = ".claude/.session_state.json"
+
+
+def check_mark(passed: bool) -> str:
+    return f"{GREEN}[x]{NC}" if passed else f"{RED}[ ]{NC}"
+
+
+def get_prds() -> list:
+    if not os.path.isdir(PRD_DIR):
+        return []
+    return [f for f in os.listdir(PRD_DIR) if f.endswith('.md')]
+
+
+def get_epics() -> dict:
+    if not os.path.isdir(EPIC_DIR):
+        return {}
+    result = {}
+    for item in os.listdir(EPIC_DIR):
+        epic_path = os.path.join(EPIC_DIR, item)
+        if os.path.isdir(epic_path):
+            tasks = [f for f in os.listdir(epic_path) if f.endswith('.md')]
+            result[item] = len(tasks)
+    return result
+
+
+def get_session_state() -> dict:
+    try:
+        if os.path.exists(SESSION_STATE_FILE):
+            with open(SESSION_STATE_FILE, 'r') as f:
+                return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        pass
+    return {}
+
+
+def main():
+    print(f"\n{BOLD}{'='*60}{NC}")
+    print(f"{BOLD}       CCPM COMPLIANCE DASHBOARD{NC}")
+    print(f"{BOLD}{'='*60}{NC}\n")
+
+    prds = get_prds()
+    epics = get_epics()
+    session_state = get_session_state()
+
+    # Session Status
+    print(f"\n{CYAN}{BOLD}SESSION STATUS{NC}")
+    print(f"{CYAN}{'-'*40}{NC}")
+    initialized = session_state.get('initialized', False)
+    print(f"  Initialized: {check_mark(initialized)}")
+
+    mb = session_state.get('memory_bank_read', {})
+    print(f"  Memory Bank Read:")
+    print(f"    - projectbrief.md:   {check_mark(mb.get('projectbrief', False))}")
+    print(f"    - systemPatterns.md: {check_mark(mb.get('systemPatterns', False))}")
+    print(f"    - activeContext.md:  {check_mark(mb.get('activeContext', False))}")
+
+    actions = session_state.get('actions_since_recitation', 0)
+    status = f"{GREEN}OK{NC}" if actions < 3 else (
+        f"{YELLOW}WARNING ({actions} actions){NC}" if actions < 5 else
+        f"{RED}BLOCKING ({actions} actions){NC}"
+    )
+    print(f"  Recitation Status: {status}")
+
+    # CCPM Overview
+    print(f"\n{CYAN}{BOLD}CCPM OVERVIEW{NC}")
+    print(f"{CYAN}{'-'*40}{NC}")
+    print(f"  PRDs:  {len(prds)} documents in {PRD_DIR}/")
+    print(f"  Epics: {len(epics)} decomposed in {EPIC_DIR}/")
+
+    # Recommendations
+    print(f"\n{CYAN}{BOLD}RECOMMENDATIONS{NC}")
+    print(f"{CYAN}{'-'*40}{NC}")
+    recommendations = []
+
+    if not initialized:
+        recommendations.append("Read Memory Bank files to initialize session")
+    if actions >= 3:
+        recommendations.append("Update activeContext.md (recitation due)")
+
+    if not recommendations:
+        print(f"  {GREEN}All CCPM protocols are being followed!{NC}")
+    else:
+        for rec in recommendations:
+            print(f"  {YELLOW}- {rec}{NC}")
+
+    print(f"\n{BOLD}{'='*60}{NC}\n")
+
+
+if __name__ == "__main__":
+    main()
+CCPM_DASH_EOF
+
+chmod +x .claude/scripts/ccpm_dashboard.py
+echo "  ✅ Created: .claude/scripts/ccpm_dashboard.py"
+
 # ============================================================================
 # PHASE 9: CCPM COMMANDS (FULL CONTENT)
 # ============================================================================
@@ -3268,6 +3775,148 @@ MEMORY_UPDATE_EOF
 
 echo "  ✅ Created: .claude/commands/memory-update.md"
 
+cat > .claude/commands/session-init.md <<'SESSION_INIT_EOF'
+---
+description: "Initialize session with Memory Bank context (MUST run at session start)"
+---
+
+# Session Initialization Protocol
+
+## MANDATORY FIRST ACTION
+This command MUST be executed at the start of every new session or after context compaction.
+
+## Execution Steps
+
+### 1. Read Core Memory Bank Files
+```
+READ: memory-bank/projectbrief.md
+READ: memory-bank/systemPatterns.md
+READ: memory-bank/activeContext.md
+READ: memory-bank/decisionLog.md (last 10 entries)
+```
+
+### 2. Summarize Understanding
+After reading, provide a brief summary:
+- Current project phase
+- Active worktree and branch
+- Last completed tasks
+- Current objectives
+- Any blockers or open questions
+
+### 3. Confirm Initialization
+Output: "Session initialized. Memory Bank loaded. Ready to proceed."
+
+### 4. Update Session Tracker
+Mark session as initialized in `.claude/.session_state.json`
+
+---
+
+## Enforcement
+If this command has not been run and agent attempts to:
+- Write code
+- Make architectural decisions
+- Commit changes
+
+The pre_tool_use hook will inject a blocking reminder.
+
+---
+
+## Usage
+This is automatically triggered by the `user_prompt_submit.sh` hook on session start.
+Can also be manually invoked with `/session-init`
+SESSION_INIT_EOF
+
+echo "  ✅ Created: .claude/commands/session-init.md"
+
+cat > .claude/commands/compliance-dashboard.md <<'COMPLIANCE_DASH_EOF'
+---
+description: "Display ASF protocol compliance status and metrics"
+---
+
+# Compliance Dashboard
+
+## Purpose
+Display current protocol adherence status across all ASF enforcement mechanisms.
+
+## Usage
+```
+/compliance-dashboard
+```
+
+## Execution Steps
+
+### 1. Run Dashboard Script
+Execute the compliance dashboard script to gather and display metrics:
+```bash
+python .claude/scripts/ccpm_dashboard.py
+```
+
+### 2. Review Sections
+
+The dashboard displays:
+
+#### Session Status
+- Initialization state (initialized/not initialized)
+- Memory Bank files read status
+- Session duration and ID
+
+#### Recitation Compliance
+- Actions since last activeContext.md update
+- Significant actions count
+- Compliance status (OK/Warning/Blocked)
+
+#### Agent Consultations
+- Recent agent consultations (architect, qa-engineer, security-auditor)
+- Required consultations for pending actions
+- Consultation gap warnings
+
+#### Context Usage
+- Estimated token usage
+- Percentage of capacity
+- Compaction recommendation status
+
+#### TDD Status
+- Tests run status
+- Last test result (pass/fail)
+- Commit eligibility
+
+#### Pending Items
+- Unlogged architectural decisions
+- Missing ADR entries
+- Required reviews before merge
+
+### 3. Address Warnings
+
+If the dashboard shows warnings or blocking conditions:
+1. Follow the suggested remediation steps
+2. Re-run dashboard to verify compliance
+3. Proceed with work only when status is green
+
+---
+
+## Quick Status Indicators
+
+| Status | Meaning |
+|--------|---------|
+| [OK] | Protocol requirements met |
+| [WARN] | Action recommended soon |
+| [BLOCKED] | Must resolve before continuing |
+| [PENDING] | Required action not yet completed |
+
+---
+
+## Integration
+
+This command can be run at any time to check compliance status.
+Recommended usage:
+- At session start (after /session-init)
+- Before commits
+- Before merge/push operations
+- When context warnings appear
+COMPLIANCE_DASH_EOF
+
+echo "  ✅ Created: .claude/commands/compliance-dashboard.md"
+
 # ============================================================================
 # PHASE 10: AGENT PERSONAS (FULL CONTENT)
 # ============================================================================
@@ -3404,6 +4053,182 @@ PM_EOF
 
 echo "  ✅ Created: .claude/agents/product-manager.md"
 
+cat > .claude/agents/coder.md <<'CODER_EOF'
+---
+name: "coder"
+---
+
+# Coder Agent Persona
+
+## Role
+You are an autonomous software engineer operating within the ASF (Autonomous Software Forge) environment. Your primary function is to implement features following strict CCPM governance and TDD methodology.
+
+## Activation
+This persona is activated when working in feature worktrees. You should follow this protocol for all implementation work.
+
+## Mandatory Session Start Protocol
+
+**BEFORE ANY CODE**, execute these steps:
+
+```
+1. READ: memory-bank/projectbrief.md
+2. READ: memory-bank/systemPatterns.md
+3. READ: memory-bank/activeContext.md
+4. READ: memory-bank/decisionLog.md (last 5 entries)
+5. CHECK: .claude/epics/<feature-name>/ for task list
+6. CONFIRM: "Session initialized. Starting task: [current task]"
+```
+
+## Implementation Workflow
+
+### Phase 1: Task Selection
+1. Read epic tasks from `.claude/epics/<feature-name>/`
+2. Identify the next incomplete task
+3. Update TodoWrite with current task
+4. Announce: "Starting task: [task-name]"
+
+### Phase 2: TDD Red Phase
+1. Write failing test FIRST
+2. Run test to confirm it fails
+3. Commit test with message: `test(<scope>): Add failing test for <feature>`
+
+### Phase 3: TDD Green Phase
+1. Write MINIMAL code to pass test
+2. Run tests to confirm pass
+3. Do NOT over-engineer
+
+### Phase 4: TDD Refactor Phase
+1. Clean up code while keeping tests green
+2. Apply patterns from systemPatterns.md
+3. Run tests after each refactor
+
+### Phase 5: Documentation
+1. Update activeContext.md with progress
+2. Add ADR to decisionLog.md if architectural decision made
+3. Commit with conventional commit message
+
+## Commit Message Format
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+Types: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`
+
+## Agent Consultation Gates
+
+### Before Commit
+- [ ] Tests passing
+- [ ] activeContext.md updated
+- [ ] No console.log debugging left
+- [ ] No hardcoded secrets
+
+### Before PR/Merge
+- Consult Architect agent for approval
+- Consult Security Auditor for sensitive code
+- Document in `.claude/.agent_consultations.json`
+
+## Error Handling
+
+If you encounter an error:
+1. DO NOT repeatedly try the same approach
+2. Document the error in activeContext.md
+3. Try an alternative approach
+4. If blocked after 3 attempts, document blocker and move to next task
+
+## Prohibited Actions
+
+- DO NOT commit without running tests
+- DO NOT skip TDD (write tests first)
+- DO NOT modify files outside your worktree (except memory-bank/)
+- DO NOT use `git push --force`
+- DO NOT commit secrets or .env files
+- DO NOT skip session initialization
+
+## Success Criteria
+
+A task is COMPLETE when:
+1. All tests pass
+2. Code follows systemPatterns.md
+3. activeContext.md is updated
+4. Conventional commit is made
+5. No linting errors
+CODER_EOF
+
+echo "  ✅ Created: .claude/agents/coder.md"
+
+# ============================================================================
+# PHASE 10.5: INITIALIZE STATE FILES
+# ============================================================================
+echo ""
+echo -e "${GREEN}[PHASE 10.5]${NC} Initializing State Files"
+
+# Initialize session state
+cat > .claude/.session_state.json <<'SESSION_STATE_EOF'
+{
+  "session_id": "pending-initialization",
+  "session_start": 0,
+  "initialized": false,
+  "memory_bank_read": {
+    "projectbrief": false,
+    "systemPatterns": false,
+    "activeContext": false,
+    "decisionLog": false
+  },
+  "significant_actions": 0,
+  "last_recitation": null,
+  "actions_since_recitation": 0,
+  "agents_consulted": [],
+  "decisions_pending_adr": [],
+  "estimated_context_tokens": 0,
+  "compaction_count": 0
+}
+SESSION_STATE_EOF
+echo "  ✅ Created: .claude/.session_state.json"
+
+# Initialize CCPM state
+cat > .claude/.ccpm_state.json <<'CCPM_STATE_EOF'
+{
+  "features": {},
+  "current_feature": null,
+  "last_phase_transition": null
+}
+CCPM_STATE_EOF
+echo "  ✅ Created: .claude/.ccpm_state.json"
+
+# Initialize agent consultation log
+cat > .claude/.agent_consultations.json <<'AGENT_LOG_EOF'
+[]
+AGENT_LOG_EOF
+echo "  ✅ Created: .claude/.agent_consultations.json"
+
+# Initialize TDD state
+cat > .claude/.tdd_state.json <<'TDD_STATE_EOF'
+{
+  "tests_passed": false,
+  "tests_run": false,
+  "test_running": false,
+  "timestamp": 0
+}
+TDD_STATE_EOF
+echo "  ✅ Created: .claude/.tdd_state.json"
+
+# Initialize recitation log
+cat > .claude/.recitation_log.json <<'RECITATION_LOG_EOF'
+[]
+RECITATION_LOG_EOF
+echo "  ✅ Created: .claude/.recitation_log.json"
+
+# Create .asf directory for SwarmPulse SDK
+mkdir -p .asf
+echo "  ✅ Created: .asf/ (SwarmPulse database directory)"
+
 # ============================================================================
 # PHASE 11: INITIALIZE MAIN WORKTREE
 # ============================================================================
@@ -3413,7 +4238,7 @@ echo -e "${GREEN}[PHASE 11]${NC} Initializing Main Worktree"
 if [ ! -d "main" ]; then
     # Create initial commit in bare repo
     git --git-dir=.bare --work-tree=. add .claude memory-bank shared-config scripts
-    git --git-dir=.bare commit -m "chore: Initialize Autonomous Software Forge v2.0" || true
+    git --git-dir=.bare commit -m "chore: Initialize Autonomous Software Forge v3.0" || true
 
     # Create main worktree
     git worktree add main main 2>/dev/null || {
@@ -3459,7 +4284,7 @@ fi
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║      🎉 FORGE INITIALIZATION COMPLETE 🎉               ║${NC}"
-echo -e "${GREEN}║            Production Ready v2.0                       ║${NC}"
+echo -e "${GREEN}║            Production Ready v3.0                       ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${BLUE}✅ What was created:${NC}"
@@ -3467,22 +4292,36 @@ echo ""
 echo "  📁 .bare/                    - Git database (bare repo)"
 echo "  📁 .claude/                  - Agent configuration"
 echo "     ├── CLAUDE.md            - Master system prompt"
+echo "     ├── PROTOCOL_ENFORCEMENT.md - Enforcement rules"
 echo "     ├── settings.json        - Hook registration"
 echo "     ├── hooks/               - Safety enforcement"
-echo "     │   ├── pre_tool_use.py  - Security & TDD hooks"
+echo "     │   ├── pre_tool_use.py  - Security & CCPM hooks"
+echo "     │   ├── post_tool_use.py - Context tracking"
+echo "     │   ├── session_tracker.py - Session state"
 echo "     │   └── user_prompt_submit.sh - Context injection"
 echo "     ├── commands/            - CCPM slash commands"
 echo "     │   ├── prd-new.md       - PRD generation"
-echo "     │   ├── epic-decompose.md- Task breakdown"
-echo "     │   ├── worktree-sync.md - Merge & sync"
-echo "     │   └── memory-update.md - Memory Bank updates"
-echo "     └── agents/              - Role-based personas"
+echo "     │   ├── epic-decompose.md - Task breakdown"
+echo "     │   ├── worktree-sync.md  - Merge & sync"
+echo "     │   ├── memory-update.md  - Memory Bank updates"
+echo "     │   ├── session-init.md   - Session initialization"
+echo "     │   └── compliance-dashboard.md - Protocol status"
+echo "     ├── agents/              - Role-based personas"
+echo "     │   ├── architect.md     - System design"
+echo "     │   ├── qa-engineer.md   - Quality assurance"
+echo "     │   ├── security-auditor.md - Security review"
+echo "     │   ├── product-manager.md - Requirements"
+echo "     │   └── coder.md         - Implementation"
+echo "     ├── scripts/             - Utility scripts"
+echo "     │   └── ccpm_dashboard.py - CCPM status"
+echo "     └── State files (.session_state.json, .ccpm_state.json, etc.)"
 echo "  📁 memory-bank/             - Long-term memory"
 echo "  📁 shared-config/           - Shared tooling configs"
 echo "  📁 scripts/                 - Automation"
 echo "     ├── setup-worktree.sh    - Create isolated environments"
 echo "     ├── cleanup-worktree.sh  - Safe worktree removal"
 echo "     └── sync-memory.sh       - Memory Bank synchronization"
+echo "  📁 .asf/                    - SwarmPulse database directory"
 echo "  📁 main/                    - Production worktree"
 echo ""
 echo -e "${BLUE}🚀 Next Steps:${NC}"
